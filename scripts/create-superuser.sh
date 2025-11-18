@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-# Вызов оригинального entrypoint init-процедуры
-/opt/netbox/docker-entrypoint.sh initialize
+# Выполняем логику ОРИГИНАЛЬНОГО entrypoint до запуска сервера
+/opt/netbox/docker-entrypoint.sh migrate
+/opt/netbox/docker-entrypoint.sh collectstatic
+/opt/netbox/docker-entrypoint.sh remove_stale_contenttypes
+/opt/netbox/docker-entrypoint.sh clear_cache
 
-# Создание суперпользователя (только один раз)
+# One-time superuser creation
 if [ ! -f "/opt/netbox/.superuser_created" ]; then
-    echo "▶ Running one-time superuser creation..."
+    echo "▶ Creating NetBox superuser (one-time)..."
 
     NB_SUPERUSER_USERNAME="${NB_SUPERUSER_USERNAME:-admin}"
     NB_SUPERUSER_PASSWORD="${NB_SUPERUSER_PASSWORD:-admin}"
@@ -28,10 +31,10 @@ else:
 EOF
 
     touch /opt/netbox/.superuser_created
-    echo "✓ Marked superuser as created."
+    echo "✓ Superuser creation marked as complete."
 fi
 
-echo "▶ Proceeding to NetBox startup..."
+echo "▶ Starting NetBox…"
 
-# Запуск NetBox как в оригинале
+# Запускаем штатный NetBox запускатель
 exec /opt/netbox/docker-entrypoint.sh "$@"
