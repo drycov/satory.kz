@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-echo "▶ Checking NetBox superuser using ENV variables..."
+# Вызов оригинального entrypoint init-процедуры
+/opt/netbox/docker-entrypoint.sh initialize
 
-# Поддержка ENV с дефолтами
-NB_SUPERUSER_USERNAME="${NB_SUPERUSER_USERNAME:-admin}"
-NB_SUPERUSER_PASSWORD="${NB_SUPERUSER_PASSWORD:-admin}"
-NB_SUPERUSER_EMAIL="${NB_SUPERUSER_EMAIL:-admin@example.com}"
+# Создание суперпользователя (только один раз)
+if [ ! -f "/opt/netbox/.superuser_created" ]; then
+    echo "▶ Running one-time superuser creation..."
 
-echo "→ Username: ${NB_SUPERUSER_USERNAME}"
-echo "→ Email: ${NB_SUPERUSER_EMAIL}"
+    NB_SUPERUSER_USERNAME="${NB_SUPERUSER_USERNAME:-admin}"
+    NB_SUPERUSER_PASSWORD="${NB_SUPERUSER_PASSWORD:-admin}"
+    NB_SUPERUSER_EMAIL="${NB_SUPERUSER_EMAIL:-admin@example.com}"
 
-python3 /opt/netbox/netbox/manage.py shell << EOF
+    python3 /opt/netbox/netbox/manage.py shell << EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -20,11 +21,17 @@ password = "${NB_SUPERUSER_PASSWORD}"
 email = "${NB_SUPERUSER_EMAIL}"
 
 if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(username=username, email=email, password=password)
-    print(f"✓ Superuser '{username}' created")
+    User.objects.create_superuser(username, email, password)
+    print(f"✓ Created superuser '{username}'")
 else:
-    print(f"✓ Superuser '{username}' already exists — skipping")
+    print(f"✓ Superuser '{username}' already exists")
 EOF
 
-echo "▶ Admin check complete."
-echo "✓ Script finished successfully."
+    touch /opt/netbox/.superuser_created
+    echo "✓ Marked superuser as created."
+fi
+
+echo "▶ Proceeding to NetBox startup..."
+
+# Запуск NetBox как в оригинале
+exec /opt/netbox/docker-entrypoint.sh "$@"
