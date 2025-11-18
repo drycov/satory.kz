@@ -1,0 +1,32 @@
+---
+username: oxidized
+password: yourpass
+model: routeros
+resolve_dns: true
+interval: 3600
+use_syslog: false
+debug: false
+threads: 30
+rest: 0.0.0.0:8888
+
+groups:
+  mikrotik:
+    username: oxidized
+    password: yourpass
+    model: routeros
+
+source:
+  default: csv
+  csv:
+    file: "/home/oxidized/.config/oxidized/devices.csv"
+    delimiter: !ruby/regexp /:/
+    map:
+      name: 0
+      ip: 1
+      group: 2
+
+output:
+  default: file
+  file:
+    directory: "./backups"
+    

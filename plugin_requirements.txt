@@ -1,0 +1,10 @@
+netbox_routing
+netbox_topology_views
+netbox-ipcalculator
+netbox-interface-synchronization
+netbox-inventory
+git+https://github.com/prettyokay-software/netbox-oxidized-config-viewer.git
+netbox-lifecycle
+netbox-config-diff
+netbox-path
+netbox-healthcheck-plugin
