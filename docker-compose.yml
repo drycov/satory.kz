@@ -159,12 +159,13 @@ services:
       - back-tier
     volumes:
       - observium-mariadb-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=$$MYSQL_ROOT_PASSWORD"]
-      start_period: 30s
-      interval: 20s
-      retries: 5
-      timeout: 5s
+  healthcheck:
+    test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+    interval: 20s
+    timeout: 5s
+    retries: 10
+    start_period: 60s
+
 
   # --------------------------------------------------------------------
   # OBSERVIUM
