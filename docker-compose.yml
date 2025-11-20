@@ -9,9 +9,12 @@ x-netbox-base: &netbox-base
   networks:
     - satory_net
   depends_on:
-    - postgres-netbox
-    - redis
-    - redis-cache
+    postgres-netbox:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    redis-cache:
+      condition: service_healthy
   env_file: env/netbox.env
   volumes:
     - ./configuration:/etc/netbox/config:ro,z
@@ -24,6 +27,7 @@ x-netbox-base: &netbox-base
 # SERVICES
 # ======================================================================
 services:
+
   # --------------------------------------------------------------------
   # NETBOX (WEB)
   # --------------------------------------------------------------------
@@ -32,9 +36,9 @@ services:
     ports:
       - "9000:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ || exit 1"]
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
       start_period: 90s
-      timeout: 3s
+      timeout: 4s
       interval: 15s
       retries: 5
 
@@ -43,150 +47,151 @@ services:
   # --------------------------------------------------------------------
   netbox-worker:
     <<: *netbox-base
-    command:
-      - /opt/netbox/venv/bin/python
-      - /opt/netbox/netbox/manage.py
-      - rqworker
+    command: >
+      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
     healthcheck:
-      test: ["CMD-SHELL", "ps -aux | grep -v grep | grep -q rqworker || exit 1"]
-      start_period: 20s
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q rqworker || exit 1"]
+      start_period: 15s
+      interval: 10s
       timeout: 3s
-      interval: 15s
       retries: 5
 
   # --------------------------------------------------------------------
-  # NETBOX HOUSEKEEPING (periodic tasks)
+  # NETBOX HOUSEKEEPING (periodic cleanup jobs)
   # --------------------------------------------------------------------
   netbox-housekeeping:
     <<: *netbox-base
     depends_on:
       netbox:
         condition: service_healthy
-    command:
-      - /opt/netbox/venv/bin/python
-      - /opt/netbox/netbox/manage.py
-      - housekeeping
+    command: >
+      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
     healthcheck:
-      test: ["CMD-SHELL", "ps -aux | grep -v grep | grep -q housekeeping || exit 1"]
-      start_period: 20s
-      interval: 15s
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q housekeeping || exit 1"]
+      start_period: 15s
+      interval: 10s
       retries: 5
 
   # --------------------------------------------------------------------
   # POSTGRESQL 17
   # --------------------------------------------------------------------
   postgres-netbox:
-    image: docker.io/postgres:17-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
+    env_file: env/postgres-netbox.env
     networks:
       - satory_net
-    env_file: env/postgres-netbox.env
     volumes:
       - netbox-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -q -t 2 -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\""]
       start_period: 20s
-      timeout: 30s
+      timeout: 5s
       interval: 10s
       retries: 5
 
   # --------------------------------------------------------------------
-  # VALKEY (Redis replacement)
+  # REDIS (Valkey primary)
   # --------------------------------------------------------------------
   redis:
-    image: docker.io/valkey/valkey:8.1-alpine
+    image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     env_file: env/redis.env
+    command: >
+      sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     networks:
       - satory_net
-    command:
-      - sh
-      - -c
-      - valkey-server --appendonly yes --requirepass $$REDIS_PASSWORD
     volumes:
       - netbox-redis-data:/data
-    healthcheck: &redis-healthcheck
-      test: '[ $$(valkey-cli --pass "$${REDIS_PASSWORD}" ping) = "PONG" ]'
+    healthcheck:
+      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
       start_period: 5s
-      timeout: 3s
-      interval: 1s
+      interval: 2s
       retries: 5
 
+  # --------------------------------------------------------------------
+  # REDIS CACHE (Valkey)
+  # --------------------------------------------------------------------
   redis-cache:
-    image: docker.io/valkey/valkey:8.1-alpine
+    image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     env_file: env/redis-cache.env
+    command: >
+      sh -c 'valkey-server --requirepass "$$REDIS_PASSWORD"'
     networks:
       - satory_net
-    command:
-      - sh
-      - -c
-      - valkey-server --requirepass $$REDIS_PASSWORD
     volumes:
       - netbox-redis-cache-data:/data
-    healthcheck: *redis-healthcheck
+    healthcheck:
+      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      start_period: 5s
+      interval: 2s
+      retries: 5
 
   # --------------------------------------------------------------------
-  # OXIDIZED (Network Config Backup)
+  # OXIDIZED
   # --------------------------------------------------------------------
   oxidized:
     image: oxidized/oxidized:latest
     restart: unless-stopped
     networks:
       - satory_net
+    ports:
+      - "8888:8888"
     volumes:
       - ./oxidized/config:/home/oxidized/.config/oxidized
       - ./oxidized/backups:/home/oxidized/.config/oxidized/backups
-    ports:
-      - "8888:8888"
     environment:
       CONFIG_RELOAD: "300"
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8888 || exit 1"]
-      interval: 30s
-      timeout: 3s
+      interval: 20s
       retries: 5
 
   # --------------------------------------------------------------------
-  # MARIA DB FOR OBSERVIUM
+  # MARIADB FOR OBSERVIUM
   # --------------------------------------------------------------------
   observium-db:
-    image: mariadb:latest
+    image: mariadb:11
+    restart: unless-stopped
     env_file: env/mariadb.env
     networks:
       - back-tier
-    restart: unless-stopped
     volumes:
       - observium-mariadb-data:/var/lib/mysql
     healthcheck:
-      test: ["executable", "arg"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=$$MYSQL_ROOT_PASSWORD"]
       start_period: 30s
+      interval: 20s
+      retries: 5
+      timeout: 5s
+
+  # --------------------------------------------------------------------
+  # OBSERVIUM
+  # --------------------------------------------------------------------
   observium:
     image: mbixtech/observium:latest
+    restart: unless-stopped
     env_file: env/observium.env
-
-    volumes:
-      - ./logs:/opt/observium/logs
-      - ./rrd:/opt/observium/rrd
     networks:
       - back-tier
     ports:
-      - "8888:80"
-    restart: unless-stopped
+      - "8081:80"
+    volumes:
+      - ./logs:/opt/observium/logs
+      - ./rrd:/opt/observium/rrd
     depends_on:
-      - observium-db
-    
+      observium-db:
+        condition: service_healthy
+
 # ======================================================================
 # VOLUMES
 # ======================================================================
 volumes:
   netbox-media-files:
   netbox-postgres-data:
-  netbox-redis-cache-data:
   netbox-redis-data:
+  netbox-redis-cache-data:
   netbox-reports-files:
   netbox-scripts-files:
   observium-mariadb-data:
@@ -199,3 +204,8 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: satory0
+
+  back-tier:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: backend0
