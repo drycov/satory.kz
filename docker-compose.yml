@@ -73,37 +73,6 @@ services:
       retries: 5
 
   # --------------------------------------------------------------------
-  # NETBOX SUPERUSER INIT (one-time)
-  # --------------------------------------------------------------------
-    netbox-superuser-init:
-      <<: *netbox-base
-      depends_on:
-        netbox:
-          condition: service_healthy
-      entrypoint:
-        - /bin/sh
-        - -c
-        - |
-          echo "▶ Creating NetBox superuser (INIT)..."
-          python3 /opt/netbox/netbox/manage.py shell <<EOF
-          from django.contrib.auth import get_user_model
-          User = get_user_model()
-
-          u = "${NB_SUPERUSER_USERNAME}"
-          p = "${NB_SUPERUSER_PASSWORD}"
-          e = "${NB_SUPERUSER_EMAIL}"
-
-          if not User.objects.filter(username=u).exists():
-              User.objects.create_superuser(u, e, p)
-              print(f"✓ Superuser {u} created")
-          else:
-              print(f"✓ Superuser {u} already exists")
-          EOF
-          echo "✓ Superuser init finished."
-      restart: "no"
-
-
-  # --------------------------------------------------------------------
   # POSTGRESQL 17
   # --------------------------------------------------------------------
   postgres-netbox:
@@ -178,6 +147,38 @@ services:
       timeout: 3s
       retries: 5
 
+  # --------------------------------------------------------------------
+  # MARIA DB FOR OBSERVIUM
+  # --------------------------------------------------------------------
+  observium-db:
+    image: mariadb:latest
+    env_file: env/mariadb.env
+    networks:
+      - back-tier
+    restart: unless-stopped
+    volumes:
+      - observium-mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["executable", "arg"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+  observium:
+    image: mbixtech/observium:latest
+    env_file: env/observium.env
+
+    volumes:
+      - ./logs:/opt/observium/logs
+      - ./rrd:/opt/observium/rrd
+    networks:
+      - back-tier
+    ports:
+      - "8888:80"
+    restart: unless-stopped
+    depends_on:
+      - observium-db
+    
 # ======================================================================
 # VOLUMES
 # ======================================================================
@@ -188,6 +189,7 @@ volumes:
   netbox-redis-data:
   netbox-reports-files:
   netbox-scripts-files:
+  observium-mariadb-data:
 
 # ======================================================================
 # NETWORKS
