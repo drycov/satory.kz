@@ -75,32 +75,33 @@ services:
   # --------------------------------------------------------------------
   # NETBOX SUPERUSER INIT (one-time)
   # --------------------------------------------------------------------
-  netbox-superuser-init:
-    <<: *netbox-base
-    depends_on:
-      netbox:
-        condition: service_healthy
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "▶ Creating NetBox superuser (INIT)..."
-        python3 /opt/netbox/netbox/manage.py shell <<EOF
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+    netbox-superuser-init:
+      <<: *netbox-base
+      depends_on:
+        netbox:
+          condition: service_healthy
+      entrypoint:
+        - /bin/sh
+        - -c
+        - |
+          echo "▶ Creating NetBox superuser (INIT)..."
+          python3 /opt/netbox/netbox/manage.py shell <<EOF
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
 
-        u = "${NB_SUPERUSER_USERNAME}"
-        p = "${NB_SUPERUSER_PASSWORD}"
-        e = "${NB_SUPERUSER_EMAIL}"
+          u = "${NB_SUPERUSER_USERNAME}"
+          p = "${NB_SUPERUSER_PASSWORD}"
+          e = "${NB_SUPERUSER_EMAIL}"
 
-        if not User.objects.filter(username=u).exists():
-            User.objects.create_superuser(u, e, p)
-            print(f"✓ Superuser {u} created")
-        else:
-            print(f"✓ Superuser {u} already exists")
-        EOF
-        echo "✓ Superuser init finished."
-    restart: false
+          if not User.objects.filter(username=u).exists():
+              User.objects.create_superuser(u, e, p)
+              print(f"✓ Superuser {u} created")
+          else:
+              print(f"✓ Superuser {u} already exists")
+          EOF
+          echo "✓ Superuser init finished."
+      restart: "no"
+
 
   # --------------------------------------------------------------------
   # POSTGRESQL 17
