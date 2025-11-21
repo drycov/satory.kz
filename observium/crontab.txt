@@ -1,2 +1,0 @@
-*/5 * * * * php -q /opt/observium/discovery.php -h all >> /opt/observium/logs/discovery.log 2>&1
-*/5 * * * * php -q /opt/observium/poller.php -h all >> /opt/observium/logs/poller.log 2>&1
