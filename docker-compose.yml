@@ -165,7 +165,8 @@ services:
   # OBSERVIUM
   # --------------------------------------------------------------------
   observium:
-    image: mbixtech/observium:latest
+    # image: mbixtech/observium:latest
+    build: ./observium
     restart: unless-stopped
     env_file: env/observium.env
     networks:
