@@ -165,8 +165,8 @@ services:
   # OBSERVIUM
   # --------------------------------------------------------------------
   observium:
-    image: mbixtech/observium:latest
-    restart: unless-stopped
+    image: pvrmza/docker-observium:latest
+    restart: always
     env_file: env/observium.env
     networks:
       - back-tier
