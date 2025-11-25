@@ -91,6 +91,6 @@ PLUGINS_CONFIG = {
         "netbox_oxidized_interface": {
     "oxidized_api_endpoint": "http://oxidized:8888",
     "generate_only_primary": True,
-  }
+  },
 
 }
