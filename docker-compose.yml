@@ -1,40 +1,5 @@
 version: "3.9"
 
-# ============================================================
-# NETWORKS
-# ============================================================
-networks:
-  satory_net:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: satory0
-
-  back-tier:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: backend0
-
-
-# ============================================================
-# VOLUMES
-# ============================================================
-volumes:
-  # NETBOX
-  netbox-media-files:
-  netbox-postgres-data:
-  netbox-redis-data:
-  netbox-redis-cache-data:
-  netbox-reports-files:
-  netbox-scripts-files:
-
-  # OBSERVIUM
-  observium-mariadb-data:
-
-  # OXIDIZED
-  oxidized-config:
-  oxidized-repo:
-
-
 # ======================================================================
 # COMMON ANCHORS (base templates)
 # ======================================================================
@@ -213,3 +178,29 @@ services:
     depends_on:
       observium-db:
         condition: service_healthy
+
+# ======================================================================
+# VOLUMES
+# ======================================================================
+volumes:
+  netbox-media-files:
+  netbox-postgres-data:
+  netbox-redis-data:
+  netbox-redis-cache-data:
+  netbox-reports-files:
+  netbox-scripts-files:
+  observium-mariadb-data:
+
+# ======================================================================
+# NETWORKS
+# ======================================================================
+networks:
+  satory_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: satory0
+
+  back-tier:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: backend0
