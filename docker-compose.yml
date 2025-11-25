@@ -6,7 +6,7 @@ version: "3.9"
 x-netbox-base: &netbox-base
   build: .
   restart: unless-stopped
-  networks: [front-tier, back-tier]
+  networks: [ front-tier, back-tier ]
   depends_on:
     postgres-netbox: { condition: service_healthy }
     redis: { condition: service_healthy }
@@ -31,7 +31,7 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -42,12 +42,9 @@ services:
     <<: *netbox-base
     container_name: netbox-worker
     command: >
-      sh -c "
-        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
-        /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
-      "
+      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f rqworker || exit 1"]
+      test: [ "CMD-SHELL", "pgrep -f rqworker || exit 1" ]
       interval: 10s
       retries: 5
 
@@ -58,12 +55,10 @@ services:
     depends_on:
       netbox: { condition: service_healthy }
     command: >
-      sh -c "
-        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
-        /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
-      "
+      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
+
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f housekeeping || exit 1"]
+      test: [ "CMD-SHELL", "pgrep -f housekeeping || exit 1" ]
       interval: 10s
       retries: 5
 
@@ -73,11 +68,11 @@ services:
     container_name: postgres-netbox
     restart: unless-stopped
     env_file: env/postgres-netbox.env
-    networks: [back-tier]
+    networks: [ back-tier ]
     volumes:
       - netbox-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\""]
+      test: [ "CMD-SHELL", "pg_isready -q -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\"" ]
       interval: 10s
       timeout: 4s
       retries: 5
@@ -88,13 +83,13 @@ services:
     container_name: redis-netbox
     restart: unless-stopped
     env_file: env/redis.env
-    networks: [back-tier]
+    networks: [ back-tier ]
     command: >
       sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     volumes:
       - netbox-redis:/data
     healthcheck:
-      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      test: [ 'CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]' ]
       interval: 2s
       retries: 5
 
@@ -104,13 +99,13 @@ services:
     container_name: redis-cache-netbox
     restart: unless-stopped
     env_file: env/redis-cache.env
-    networks: [back-tier]
+    networks: [ back-tier ]
     command: >
       sh -c 'valkey-server --requirepass "$$REDIS_PASSWORD"'
     volumes:
       - netbox-redis-cache:/data
     healthcheck:
-      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      test: [ 'CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]' ]
       interval: 2s
       retries: 5
 
@@ -119,7 +114,7 @@ services:
     image: oxidized/oxidized:latest
     container_name: oxidized
     restart: unless-stopped
-    networks: [front-tier]
+    networks: [ front-tier ]
     ports:
       - "8888:8888"
     volumes:
@@ -128,7 +123,7 @@ services:
     environment:
       CONFIG_RELOAD: "300"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8888 || exit 1"]
+      test: [ "CMD-SHELL", "curl -fs http://localhost:8888 || exit 1" ]
       interval: 15s
       retries: 5
 
@@ -156,8 +151,8 @@ services:
     container_name: librenms
     hostname: librenms
     restart: always
-    networks: [front-tier]
-    cap_add: [NET_ADMIN, NET_RAW]
+    networks: [ front-tier ]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     ports:
       - "8000:8000"
     depends_on:
@@ -191,7 +186,7 @@ services:
     container_name: librenms-syslogng
     hostname: librenms-syslogng
     restart: always
-    cap_add: [NET_ADMIN, NET_RAW]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     depends_on:
       - librenms
       - redis
@@ -205,13 +200,12 @@ services:
     environment:
       SIDECAR_SYSLOGNG: 1
 
-
   snmptrapd:
     image: librenms/librenms:latest
     container_name: librenms-snmptrapd
     hostname: librenms-snmptrapd
     restart: always
-    cap_add: [NET_ADMIN, NET_RAW]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     depends_on:
       - librenms
       - redis
@@ -236,9 +230,9 @@ volumes:
   netbox-reports:
   netbox-scripts:
 
-# ===============================================================
-# NETWORKS
-# ===============================================================
+    # ===============================================================
+    # NETWORKS
+    # ===============================================================
 networks:
   front-tier:
     name: satory_net
