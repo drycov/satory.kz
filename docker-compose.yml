@@ -136,14 +136,17 @@ services:
     container_name: rancid
     user: "1000:1000"
     restart: unless-stopped
-    volumes:
-      - ./rancid/var/rancid:/var/rancid
-      - ./rancid/rancid-secrets/.cloginrc:/root/.cloginrc:ro
-      - ./rancid/etc/rancid/rancid.conf:/etc/rancid/rancid.conf:ro
     environment:
       - TZ=Asia/Almaty
+      # Явно говорим clogin, где лежит конфиг
+      - CLOGINRC=/var/rancid/.cloginrc
+    volumes:
+      - ./rancid/var/rancid:/var/rancid
+      - ./rancid/rancid-secrets/.cloginrc:/var/rancid/.cloginrc:ro
+      - ./rancid/etc/rancid/rancid.conf:/etc/rancid/rancid.conf:ro
     networks:
       - back-tier
+
 
 
   # --------------------------------------------------------------------
