@@ -133,8 +133,14 @@ services:
 
   db:
     image: mariadb:latest
-    container_name: librenms-db
+    container_name: librenms_db
     restart: always
+    command:
+      - "mysqld"
+      - "--innodb-file-per-table=1"
+      - "--lower-case-table-names=0"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
     volumes:
       - ./db:/var/lib/mysql
     env_file: env/mariadb.env
@@ -165,6 +171,11 @@ services:
       - ./librenms:/data
     env_file:
       - ./env/librenms.env
+    environment:
+      - "TZ=${TZ}"
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "DB_HOST=db"
 
   dispatcher:
     image: librenms/librenms:latest
@@ -179,9 +190,12 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      DB_TIMEOUT: 60
-      SIDECAR_DISPATCHER: 1
-      DISPATCHER_NODE_ID: dispatcher1
+      - "TZ=${TZ}"
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "DB_TIMEOUT=60"
+      - "DISPATCHER_NODE_ID=dispatcher1"
+      - "SIDECAR_DISPATCHER=1"
 
   syslogng:
     image: librenms/librenms:latest
@@ -200,7 +214,11 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      SIDECAR_SYSLOGNG: 1
+      - "TZ=${TZ}"
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
+      - "DB_TIMEOUT=60"
+      - "SIDECAR_SYSLOGNG=1"
 
   snmptrapd:
     image: librenms/librenms:latest
@@ -219,8 +237,11 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      SIDECAR_SNMPTRAPD: 1
-
+      - "DB_TIMEOUT=60"
+      - "SIDECAR_SNMPTRAPD=1"
+      - "TZ=${TZ}"
+      - "PUID=${PUID}"
+      - "PGID=${PGID}"
 # ===============================================================
 # VOLUMES
 # ===============================================================
