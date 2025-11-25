@@ -1,52 +1,37 @@
 ---
-username: username
-password: password
-model: junos
-resolve_dns: true
+username: "rancid"     # или другой
+password: "password"
+model: auto
+resolve_dns: false
 interval: 3600
-debug: false
-run_once: false
-threads: 30
-use_max_threads: false
-timeout: 20
-timelimit: 300
-retries: 3
-prompt: !ruby/regexp /^([\w.@-]+[#>]\s?)$/
-next_adds_job: false
-vars: {}
+use_syslog: false
+
 groups: {}
-group_map: {}
-models: {}
-pid: "/home/oxidized/.config/oxidized/pid"
-extensions:
-  oxidized-web:
-    load: false
-crash:
-  directory: "/home/oxidized/.config/oxidized/crashes"
-  hostnames: false
-stats:
-  history_size: 10
-input:
-  default: ssh, telnet
-  debug: false
-  ssh:
-    secure: false
-  ftp:
-    passive: true
-  utf8_encoded: true
-output:
-  default: file
-  file:
-    directory: "/home/oxidized/.config/oxidized/configs"
-source:
-  default: csv
-  csv:
-    file: "/home/oxidized/.config/oxidized/router.db"
-    delimiter: !ruby/regexp /:/
-    map:
-      name: 0
-      model: 1
-    gpg: false
 model_map:
-  juniper: junos
   cisco: ios
+  mikrotik: routeros
+  huawei: vrp
+
+source:
+  default: http
+  debug: false
+  http:
+    url: http://netbox:8080/api/plugins/netbox_config_context/oxidized/
+    scheme: http
+    map:
+      name: name
+      model: platform.slug
+      group: site.slug
+      ip: primary_ip4.address
+
+output:
+  default: git
+  git:
+    user: Oxidized
+    email: oxidized@satory.kz
+    repo: "/root/.config/oxidized/repository.git"
+
+hooks:
+  push_to_remote:
+    type: git
+    events: [post_store]

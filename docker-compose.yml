@@ -131,21 +131,20 @@ services:
   # --------------------------------------------------------------------
   # OXIDIZED
   # --------------------------------------------------------------------
-  rancid:
-    image: nickhasser/rancid
-    container_name: rancid
-    user: "1000:1000"
+  oxidized:
+    image: oxidized/oxidized:latest
+    container_name: oxidized
     restart: unless-stopped
-    environment:
-      - TZ=Asia/Almaty
-      # Явно говорим clogin, где лежит конфиг
-      - CLOGINRC=/var/rancid/.cloginrc
+    ports:
+      - "8888:8888"
     volumes:
-      - ./rancid/var/rancid:/var/rancid
-      - ./rancid/rancid-secrets/.cloginrc:/var/rancid/.cloginrc:ro
-      - ./rancid/etc/rancid/rancid.conf:/etc/rancid/rancid.conf:ro
+      - ./oxidized/config:/etc/oxidized
+      - ./oxidized/repos:/root/.config/oxidized
+    environment:
+      CONFIG_RELOAD_INTERVAL: 3600
     networks:
       - back-tier
+
 
 
 

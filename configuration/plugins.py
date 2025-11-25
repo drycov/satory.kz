@@ -8,8 +8,8 @@ PLUGINS = [
     "netbox_lifecycle",
     "netbox_config_diff",
     # "netbox_path",
-        'netbox_healthcheck_plugin'
-
+        'netbox_healthcheck_plugin',
+"netbox_oxidized_interface"
     
 ]
 
@@ -88,5 +88,9 @@ PLUGINS_CONFIG = {
     "default_eol_warning_days": 180,
 },
         "netbox_healthcheck_plugin": {},
+        "netbox_oxidized_interface": {
+    "oxidized_api_endpoint": "http://oxidized:8888",
+    "generate_only_primary": True,
+  }
 
 }
