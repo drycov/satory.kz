@@ -131,22 +131,19 @@ services:
   # --------------------------------------------------------------------
   # OXIDIZED
   # --------------------------------------------------------------------
-  oxidized:
-    image: oxidized/oxidized:latest
+  rancid:
+    image: nickhasser/rancid
+    container_name: rancid
     restart: unless-stopped
-    networks:
-      - satory_net
-    ports:
-      - "8888:8888"
     volumes:
-      - ./oxidized/config:/home/oxidized/.config/oxidized
-      - ./oxidized/backups:/home/oxidized/.config/oxidized/backups
+      - ./rancid/var/rancid:/var/rancid
+      - ./rancid/rancid-secrets/.cloginrc:/root/.cloginrc:ro
+      - ./rancid/etc/rancid/rancid.conf:/etc/rancid/rancid.conf:ro
     environment:
-      CONFIG_RELOAD: "300"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8888 || exit 1"]
-      interval: 20s
-      retries: 5
+      - TZ=Asia/Almaty
+    networks:
+      - back-tier
+
 
   # --------------------------------------------------------------------
   # MARIADB FOR OBSERVIUM
@@ -175,6 +172,8 @@ services:
     volumes:
       - ./logs:/opt/observium/logs
       - ./rrd:/opt/observium/rrd
+      - ./rancid/var/rancid:/var/rancid:ro
+
     depends_on:
       observium-db:
         condition: service_healthy
