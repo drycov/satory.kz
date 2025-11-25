@@ -1,179 +1,130 @@
 version: "3.9"
 
-# ======================================================================
-# COMMON ANCHORS (base templates)
-# ======================================================================
+# ===============================================================
+# ANCHORS
+# ===============================================================
 x-netbox-base: &netbox-base
   build: .
   restart: unless-stopped
-  networks:
-    - front-tier
-    - back-tier
+  networks: [front-tier, back-tier]
   depends_on:
-    postgres-netbox:
-      condition: service_healthy
-    redis:
-      condition: service_healthy
-    redis-cache:
-      condition: service_healthy
+    postgres-netbox: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    redis-cache: { condition: service_healthy }
   env_file: env/netbox.env
   volumes:
     - ./configuration:/etc/netbox/config:ro,z
-    - netbox-media-files:/opt/netbox/netbox/media:rw
-    - netbox-reports-files:/opt/netbox/netbox/reports:rw
-    - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
+    - netbox-media:/opt/netbox/netbox/media:rw
+    - netbox-reports:/opt/netbox/netbox/reports:rw
+    - netbox-scripts:/opt/netbox/netbox/scripts:rw
     - ./plugin_requirements.txt:/opt/netbox/plugin_requirements.txt:z
 
-# ======================================================================
+# ===============================================================
 # SERVICES
-# ======================================================================
+# ===============================================================
 services:
 
-  # --------------------------------------------------------------------
-  # NETBOX (WEB)
-  # --------------------------------------------------------------------
+  # ---------------- NetBox (Web UI) ----------------
   netbox:
     <<: *netbox-base
     container_name: netbox
     ports:
       - "9000:8080"
-
     command: >
       sh -c "
-        until getent hosts $DB_HOST; do
-          echo '⏳ waiting DNS for postgres…';
-          sleep 2;
-        done;
+        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
         /opt/netbox/venv/bin/gunicorn netbox.wsgi --bind 0.0.0.0:8080
       "
-
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
-      start_period: 90s
-      timeout: 4s
       interval: 15s
+      timeout: 5s
       retries: 5
+      start_period: 60s
 
-  # --------------------------------------------------------------------
-  # NETBOX WORKER (RQ)
-  # --------------------------------------------------------------------
+  # ---------------- NetBox Worker ----------------
   netbox-worker:
     <<: *netbox-base
-    container_name: netboxw
-    # command: >
-    #   /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+    container_name: netbox-worker
     command: >
       sh -c "
-        until getent hosts $DB_HOST; do
-          echo '⏳ waiting DNS for postgres…';
-          sleep 2;
-        done;
+        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
         /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
       "
-
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q rqworker || exit 1"]
-      start_period: 15s
+      test: ["CMD-SHELL", "pgrep -f rqworker || exit 1"]
       interval: 10s
-      timeout: 3s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # NETBOX HOUSEKEEPING (periodic cleanup jobs)
-  # --------------------------------------------------------------------
+  # ---------------- Housekeeping ----------------
   netbox-housekeeping:
     <<: *netbox-base
-    container_name: netboxh
+    container_name: netbox-housekeeping
     depends_on:
-      netbox:
-        condition: service_healthy
-    # command: >
-    #   /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
-
+      netbox: { condition: service_healthy }
     command: >
       sh -c "
-        until getent hosts $DB_HOST; do
-          echo '⏳ waiting DNS for postgres…';
-          sleep 2;
-        done;
-      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
+        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
+        /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
       "
-
     healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q housekeeping || exit 1"]
-      start_period: 15s
+      test: ["CMD-SHELL", "pgrep -f housekeeping || exit 1"]
       interval: 10s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # POSTGRESQL 17
-  # --------------------------------------------------------------------
+  # ---------------- PostgreSQL 17 ----------------
   postgres-netbox:
     image: postgres:17-alpine
+    container_name: postgres-netbox
     restart: unless-stopped
-    container_name: pgnetbox
     env_file: env/postgres-netbox.env
-    networks:
-      - back-tier
+    networks: [back-tier]
     volumes:
-      - netbox-postgres-data:/var/lib/postgresql/data
+      - netbox-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q -t 2 -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\""]
-      start_period: 20s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -q -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\""]
       interval: 10s
+      timeout: 4s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # REDIS (Valkey primary)
-  # --------------------------------------------------------------------
+  # ---------------- Redis (Primary) ----------------
   redis:
     image: valkey/valkey:8.1-alpine
+    container_name: redis-netbox
     restart: unless-stopped
     env_file: env/redis.env
-    container_name: netbox-redis
+    networks: [back-tier]
     command: >
       sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
-    networks:
-      - back-tier
     volumes:
-      - netbox-redis-data:/data
+      - netbox-redis:/data
     healthcheck:
       test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
-      start_period: 5s
       interval: 2s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # REDIS CACHE (Valkey)
-  # --------------------------------------------------------------------
+  # ---------------- Redis Cache ----------------
   redis-cache:
     image: valkey/valkey:8.1-alpine
+    container_name: redis-cache-netbox
     restart: unless-stopped
     env_file: env/redis-cache.env
-    container_name: netbox-cache
-
+    networks: [back-tier]
     command: >
       sh -c 'valkey-server --requirepass "$$REDIS_PASSWORD"'
-    networks:
-      - back-tier
     volumes:
-      - netbox-redis-cache-data:/data
+      - netbox-redis-cache:/data
     healthcheck:
       test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
-      start_period: 5s
       interval: 2s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # OXIDIZED
-  # --------------------------------------------------------------------
+  # ---------------- Oxidized ----------------
   oxidized:
     image: oxidized/oxidized:latest
-    restart: unless-stopped
     container_name: oxidized
-    networks:
-      - front-tier
+    restart: unless-stopped
+    networks: [front-tier]
     ports:
       - "8888:8888"
     volumes:
@@ -183,59 +134,150 @@ services:
       CONFIG_RELOAD: "300"
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8888 || exit 1"]
-      interval: 20s
+      interval: 15s
       retries: 5
 
-  # --------------------------------------------------------------------
-  # MARIADB FOR OBSERVIUM
-  # --------------------------------------------------------------------
-  observium-db:
-    image: mariadb:11
-    container_name: observium-db
-    restart: unless-stopped
-    env_file: env/mariadb.env
-    networks:
-      - back-tier
-    volumes:
-      - observium-mariadb-data:/var/lib/mysql
+  # ===============================================================
+  # LIBRENMS STACK
+  # ===============================================================
 
-
-  # --------------------------------------------------------------------
-  # OBSERVIUM
-  # --------------------------------------------------------------------
-  observium:
-    image: pvrmza/docker-observium:latest
+  db:
+    image: mariadb:10
+    container_name: librenms-db
     restart: always
-    env_file: env/observium.env
-    container_name: observium
-
-    networks:
-      - back-tier
-      - front-tier
-    ports:
-      - "8081:80"
+    command:
+      - "mysqld"
+      - "--innodb-file-per-table=1"
+      - "--lower-case-table-names=0"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
     volumes:
-      - ./logs:/opt/observium/logs
-      - ./rrd:/opt/observium/rrd
+      - ./db:/var/lib/mysql
+    environment:
+      TZ: ${TZ}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+  msmtpd:
+    image: crazymax/msmtpd:latest
+    container_name: librenms-msmtpd
+    restart: always
+    env_file:
+      - ./env/msmtpd.env
+
+  librenms:
+    image: librenms/librenms:latest
+    container_name: librenms
+    hostname: librenms
+    restart: always
+    networks: [front-tier]
+    cap_add: [NET_ADMIN, NET_RAW]
+    ports:
+      - "8000:8000"
     depends_on:
-      observium-db:
-        condition: service_healthy
+      - db
+      - redis-libre
+      - msmtpd
+    volumes:
+      - ./librenms:/data
+    env_file:
+      - ./env/librenms.env
+    environment:
+      TZ: ${TZ}
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_TIMEOUT: 60
+      PUID: ${PUID}
+      PGID: ${PGID}
 
-# ======================================================================
+  dispatcher:
+    image: librenms/librenms:latest
+    container_name: librenms-dispatcher
+    hostname: librenms-dispatcher
+    restart: always
+    depends_on:
+      - librenms
+      - redis
+    volumes:
+      - ./librenms:/data
+    env_file:
+      - ./env/librenms.env
+    environment:
+      TZ: ${TZ}
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_TIMEOUT: 60
+      SIDECAR_DISPATCHER: 1
+      DISPATCHER_NODE_ID: dispatcher1
+
+  syslogng:
+    image: librenms/librenms:latest
+    container_name: librenms-syslogng
+    hostname: librenms-syslogng
+    restart: always
+    cap_add: [NET_ADMIN, NET_RAW]
+    depends_on:
+      - librenms
+      - redis
+    ports:
+      - "514:514/tcp"
+      - "514:514/udp"
+    volumes:
+      - ./librenms:/data
+    env_file:
+      - ./env/librenms.env
+    environment:
+      TZ: ${TZ}
+      SIDECAR_SYSLOGNG: 1
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+
+  snmptrapd:
+    image: librenms/librenms:latest
+    container_name: librenms-snmptrapd
+    hostname: librenms-snmptrapd
+    restart: always
+    cap_add: [NET_ADMIN, NET_RAW]
+    depends_on:
+      - librenms
+      - redis
+    ports:
+      - "162:162/tcp"
+      - "162:162/udp"
+    volumes:
+      - ./librenms:/data
+    env_file:
+      - ./env/librenms.env
+    environment:
+      TZ: ${TZ}
+      SIDECAR_SNMPTRAPD: 1
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+
+# ===============================================================
 # VOLUMES
-# ======================================================================
+# ===============================================================
 volumes:
-  netbox-media-files:
-  netbox-postgres-data:
-  netbox-redis-data:
-  netbox-redis-cache-data:
-  netbox-reports-files:
-  netbox-scripts-files:
-  observium-mariadb-data:
+  netbox-media:
+  netbox-postgres:
+  netbox-redis:
+  netbox-redis-cache:
+  netbox-reports:
+  netbox-scripts:
 
-# ======================================================================
+# ===============================================================
 # NETWORKS
-# ======================================================================
+# ===============================================================
 networks:
   front-tier:
     name: satory_net
@@ -244,7 +286,7 @@ networks:
       com.docker.network.bridge.name: satory0
 
   back-tier:
+    name: backend0
     driver: bridge
-    name: stack_net
     driver_opts:
       com.docker.network.bridge.name: backend0
