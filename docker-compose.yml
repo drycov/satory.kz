@@ -206,13 +206,13 @@ volumes:
 # ======================================================================
 networks:
   front-tier:
-    name: front
+    name: satory_net
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: satory0
 
   back-tier:
     driver: bridge
-    name: back
+    name: stack_net
     driver_opts:
       com.docker.network.bridge.name: backend0
