@@ -1,0 +1,5 @@
+add user * rancid
+add password * password
+add identity * /var/lib/rancid/.ssh/id_dsa
+add method * ssh
+add noenable * {1}
