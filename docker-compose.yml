@@ -132,7 +132,7 @@ services:
   # ===============================================================
 
   db:
-    image: mariadb:10
+    image: mariadb:10.11
     container_name: librenms_db
     restart: always
     command:
