@@ -148,12 +148,7 @@ services:
       - "--collation-server=utf8mb4_unicode_ci"
     volumes:
       - ./db:/var/lib/mysql
-    environment:
-      TZ: ${TZ}
-      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    env_file: env/mariadb.env
 
   msmtpd:
     image: crazymax/msmtpd:latest
