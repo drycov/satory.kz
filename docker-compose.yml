@@ -33,6 +33,7 @@ services:
   # --------------------------------------------------------------------
   netbox:
     <<: *netbox-base
+    container_name: netbox
     ports:
       - "9000:8080"
     healthcheck:
@@ -47,6 +48,7 @@ services:
   # --------------------------------------------------------------------
   netbox-worker:
     <<: *netbox-base
+    container_name: netboxw
     command: >
       /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
     healthcheck:
@@ -61,6 +63,7 @@ services:
   # --------------------------------------------------------------------
   netbox-housekeeping:
     <<: *netbox-base
+    container_name: netboxh
     depends_on:
       netbox:
         condition: service_healthy
@@ -98,6 +101,7 @@ services:
     image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     env_file: env/redis.env
+    container_name: netbox-redis
     command: >
       sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     networks:
@@ -117,6 +121,8 @@ services:
     image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     env_file: env/redis-cache.env
+    container_name: netbox-cache
+
     command: >
       sh -c 'valkey-server --requirepass "$$REDIS_PASSWORD"'
     networks:
@@ -135,6 +141,7 @@ services:
   oxidized:
     image: oxidized/oxidized:latest
     restart: unless-stopped
+    container_name: oxidized
     networks:
       - satory_net
     ports:
@@ -169,6 +176,8 @@ services:
     image: pvrmza/docker-observium:latest
     restart: always
     env_file: env/observium.env
+    container_name: observium
+
     networks:
       - back-tier
     ports:
