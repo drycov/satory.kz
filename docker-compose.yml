@@ -134,6 +134,7 @@ services:
   rancid:
     image: nickhasser/rancid
     container_name: rancid
+    user: "1000:1000"
     restart: unless-stopped
     volumes:
       - ./rancid/var/rancid:/var/rancid
