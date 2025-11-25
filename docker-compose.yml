@@ -29,7 +29,7 @@ services:
     <<: *netbox-base
     container_name: netbox
     ports:
-      - "9000:8080"
+      - "8080:8080"
     command: >
       sh -c "
         until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
