@@ -168,15 +168,6 @@ services:
       - ./librenms:/data
     env_file:
       - ./env/librenms.env
-    environment:
-      TZ: ${TZ}
-      DB_HOST: db
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      DB_TIMEOUT: 60
-      PUID: ${PUID}
-      PGID: ${PGID}
 
   dispatcher:
     image: librenms/librenms:latest
@@ -191,11 +182,6 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      TZ: ${TZ}
-      DB_HOST: db
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_TIMEOUT: 60
       SIDECAR_DISPATCHER: 1
       DISPATCHER_NODE_ID: dispatcher1
@@ -217,12 +203,8 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      TZ: ${TZ}
       SIDECAR_SYSLOGNG: 1
-      DB_HOST: db
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+
 
   snmptrapd:
     image: librenms/librenms:latest
@@ -241,12 +223,7 @@ services:
     env_file:
       - ./env/librenms.env
     environment:
-      TZ: ${TZ}
       SIDECAR_SNMPTRAPD: 1
-      DB_HOST: db
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
 
 # ===============================================================
 # VOLUMES
