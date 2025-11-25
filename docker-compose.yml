@@ -152,7 +152,7 @@ services:
     hostname: librenms
     restart: always
     networks: [ front-tier ]
-    # cap_add: [ NET_ADMIN, NET_RAW ]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     ports:
       - target: 8000
         published: 8000
@@ -188,7 +188,7 @@ services:
     container_name: librenms-syslogng
     hostname: librenms-syslogng
     restart: always
-    # cap_add: [ NET_ADMIN, NET_RAW ]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     depends_on:
       - librenms
       - redis
@@ -207,7 +207,7 @@ services:
     container_name: librenms-snmptrapd
     hostname: librenms-snmptrapd
     restart: always
-    # cap_add: [ NET_ADMIN, NET_RAW ]
+    cap_add: [ NET_ADMIN, NET_RAW ]
     depends_on:
       - librenms
       - redis
