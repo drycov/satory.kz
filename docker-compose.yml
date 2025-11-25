@@ -137,15 +137,9 @@ services:
   # ===============================================================
 
   db:
-    image: mariadb:10
+    image: mariadb:latest
     container_name: librenms-db
     restart: always
-    command:
-      - "mysqld"
-      - "--innodb-file-per-table=1"
-      - "--lower-case-table-names=0"
-      - "--character-set-server=utf8mb4"
-      - "--collation-server=utf8mb4_unicode_ci"
     volumes:
       - ./db:/var/lib/mysql
     env_file: env/mariadb.env
