@@ -7,4 +7,3 @@ netbox-lifecycle
 netbox-config-diff
 netbox-path
 netbox-healthcheck-plugin
-netbox-oxidized-interface
