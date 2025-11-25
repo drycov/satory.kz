@@ -1,44 +1,10 @@
 version: "3.9"
 
-# ============================================================
-# NETWORKS
-# ============================================================
-networks:
-  satory_net:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: satory0
-
-  back-tier:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.name: backend0
-
-# ============================================================
-# VOLUMES
-# ============================================================
-volumes:
-  # NETBOX
-  netbox-media-files:
-  netbox-postgres-data:
-  netbox-redis-data:
-  netbox-redis-cache-data:
-  netbox-reports-files:
-  netbox-scripts-files:
-
-  # OBSERVIUM
-  observium-mariadb-data:
-
-  # OXIDIZED
-  oxidized-config:
-  oxidized-repo:
-
-# ============================================================
-# SHARED CONFIG
-# ============================================================
-
+# ======================================================================
+# COMMON ANCHORS (base templates)
+# ======================================================================
 x-netbox-base: &netbox-base
-  build: ./netbox
+  build: .
   restart: unless-stopped
   networks:
     - satory_net
@@ -51,20 +17,20 @@ x-netbox-base: &netbox-base
       condition: service_healthy
   env_file: env/netbox.env
   volumes:
-    - ./netbox/configuration:/etc/netbox/config:ro,z
+    - ./configuration:/etc/netbox/config:ro,z
     - netbox-media-files:/opt/netbox/netbox/media:rw
     - netbox-reports-files:/opt/netbox/netbox/reports:rw
     - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
-    - ./netbox/plugin_requirements.txt:/opt/netbox/plugin_requirements.txt:z
+    - ./plugin_requirements.txt:/opt/netbox/plugin_requirements.txt:z
 
-# ============================================================
+# ======================================================================
 # SERVICES
-# ============================================================
+# ======================================================================
 services:
 
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   # NETBOX (WEB)
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   netbox:
     <<: *netbox-base
     ports:
@@ -72,13 +38,13 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
       start_period: 90s
-      interval: 15s
       timeout: 4s
+      interval: 15s
       retries: 5
 
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   # NETBOX WORKER (RQ)
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   netbox-worker:
     <<: *netbox-base
     command: >
@@ -90,9 +56,9 @@ services:
       timeout: 3s
       retries: 5
 
-  # ------------------------------------------------------------
-  # NETBOX HOUSEKEEPING
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
+  # NETBOX HOUSEKEEPING (periodic cleanup jobs)
+  # --------------------------------------------------------------------
   netbox-housekeeping:
     <<: *netbox-base
     depends_on:
@@ -100,18 +66,17 @@ services:
         condition: service_healthy
     command: >
       /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
-    restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q housekeeping || exit 1"]
       start_period: 15s
       interval: 10s
       retries: 5
 
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   # POSTGRESQL 17
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
   postgres-netbox:
-    image: postgres:17
+    image: postgres:17-alpine
     restart: unless-stopped
     env_file: env/postgres-netbox.env
     networks:
@@ -120,32 +85,33 @@ services:
       - netbox-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -q -t 2 -d \"$POSTGRES_DB\" -U \"$POSTGRES_USER\""]
-      start_period: 25s
-      interval: 10s
+      start_period: 20s
       timeout: 5s
+      interval: 10s
       retries: 5
 
-  # ------------------------------------------------------------
-  # REDIS (VALKEY PRIMARY)
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
+  # REDIS (Valkey primary)
+  # --------------------------------------------------------------------
   redis:
     image: valkey/valkey:8.1-alpine
     restart: unless-stopped
     env_file: env/redis.env
     command: >
-      sh -c 'valkey-server --appendonly yes --appendfsync everysec --requirepass "$$REDIS_PASSWORD"'
+      sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     networks:
       - satory_net
     volumes:
       - netbox-redis-data:/data
     healthcheck:
-      test: ['CMD-SHELL', '[ "$(valkey-cli -a "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      start_period: 5s
       interval: 2s
       retries: 5
 
-  # ------------------------------------------------------------
-  # REDIS CACHE (VALKEY)
-  # ------------------------------------------------------------
+  # --------------------------------------------------------------------
+  # REDIS CACHE (Valkey)
+  # --------------------------------------------------------------------
   redis-cache:
     image: valkey/valkey:8.1-alpine
     restart: unless-stopped
@@ -157,38 +123,34 @@ services:
     volumes:
       - netbox-redis-cache-data:/data
     healthcheck:
-      test: ['CMD-SHELL', '[ "$(valkey-cli -a "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      test: ['CMD-SHELL', '[ "$(valkey-cli --pass "$${REDIS_PASSWORD}" ping)" = "PONG" ]']
+      start_period: 5s
       interval: 2s
       retries: 5
 
-  # ============================================================
-  # OXIDIZED (CONFIG BACKUPS)
-  # ============================================================
-
+  # --------------------------------------------------------------------
+  # OXIDIZED
+  # --------------------------------------------------------------------
   oxidized:
     image: oxidized/oxidized:latest
-    container_name: oxidized
     restart: unless-stopped
-    user: "1000:1000"
+    networks:
+      - satory_net
     ports:
       - "8888:8888"
-    networks:
-      - back-tier
-    environment:
-      CONFIG_RELOAD_INTERVAL: 3600
     volumes:
-      - oxidized-config:/etc/oxidized
-      - oxidized-repo:/root/.config/oxidized
-      - ./oxidized/config:/etc/oxidized:ro
+      - ./oxidized/config:/home/oxidized/.config/oxidized
+      - ./oxidized/backups:/home/oxidized/.config/oxidized/backups
+    environment:
+      CONFIG_RELOAD: "300"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:8888/nodes.json > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "curl -fs http://localhost:8888 || exit 1"]
       interval: 20s
-      retries: 3
+      retries: 5
 
-  # ============================================================
+  # --------------------------------------------------------------------
   # MARIADB FOR OBSERVIUM
-  # ============================================================
-
+  # --------------------------------------------------------------------
   observium-db:
     image: mariadb:11
     restart: unless-stopped
@@ -197,15 +159,11 @@ services:
       - back-tier
     volumes:
       - observium-mariadb-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
-      interval: 10s
-      retries: 5
 
-  # ============================================================
+
+  # --------------------------------------------------------------------
   # OBSERVIUM
-  # ============================================================
-
+  # --------------------------------------------------------------------
   observium:
     image: pvrmza/docker-observium:latest
     restart: always
@@ -214,15 +172,35 @@ services:
       - back-tier
     ports:
       - "8081:80"
+    volumes:
+      - ./logs:/opt/observium/logs
+      - ./rrd:/opt/observium/rrd
     depends_on:
       observium-db:
         condition: service_healthy
-      oxidized:
-        condition: service_started
-    volumes:
-      - ./observium/logs:/opt/observium/logs
-      - ./observium/rrd:/opt/observium/rrd
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost > /dev/null || exit 1"]
-      interval: 20s
-      retries: 3
+
+# ======================================================================
+# VOLUMES
+# ======================================================================
+volumes:
+  netbox-media-files:
+  netbox-postgres-data:
+  netbox-redis-data:
+  netbox-redis-cache-data:
+  netbox-reports-files:
+  netbox-scripts-files:
+  observium-mariadb-data:
+
+# ======================================================================
+# NETWORKS
+# ======================================================================
+networks:
+  satory_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: satory0
+
+  back-tier:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: backend0
