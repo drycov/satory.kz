@@ -175,7 +175,6 @@ services:
     volumes:
       - ./logs:/opt/observium/logs
       - ./rrd:/opt/observium/rrd
-      - ./rancid/var/rancid:/var/rancid:ro
 
     depends_on:
       observium-db:
