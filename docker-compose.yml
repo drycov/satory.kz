@@ -30,11 +30,6 @@ services:
     container_name: netbox
     ports:
       - "8080:8080"
-    command: >
-      sh -c "
-        until getent hosts $DB_HOST; do echo '⏳ waiting DNS for postgres'; sleep 2; done;
-        /opt/netbox/venv/bin/gunicorn netbox.wsgi --bind 0.0.0.0:8080
-      "
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
       interval: 15s
