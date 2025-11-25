@@ -9,7 +9,7 @@ x-netbox-base: &netbox-base
   networks:
     - satory_net
   depends_on:
-    postgres-netbox:
+    pgnetbox:
       condition: service_healthy
     redis:
       condition: service_healthy
@@ -78,6 +78,7 @@ services:
   postgres-netbox:
     image: postgres:17-alpine
     restart: unless-stopped
+    container_name: pgnetbox
     env_file: env/postgres-netbox.env
     networks:
       - satory_net
