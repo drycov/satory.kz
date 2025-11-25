@@ -37,6 +37,16 @@ services:
     container_name: netbox
     ports:
       - "9000:8080"
+
+    command: >
+      sh -c "
+        until getent hosts $DB_HOST; do
+          echo '⏳ waiting DNS for postgres…';
+          sleep 2;
+        done;
+        /opt/netbox/venv/bin/gunicorn netbox.wsgi --bind 0.0.0.0:8080
+      "
+
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
       start_period: 90s
@@ -50,8 +60,17 @@ services:
   netbox-worker:
     <<: *netbox-base
     container_name: netboxw
+    # command: >
+    #   /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
     command: >
-      /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+      sh -c "
+        until getent hosts $DB_HOST; do
+          echo '⏳ waiting DNS for postgres…';
+          sleep 2;
+        done;
+        /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+      "
+
     healthcheck:
       test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q rqworker || exit 1"]
       start_period: 15s
@@ -68,8 +87,18 @@ services:
     depends_on:
       netbox:
         condition: service_healthy
+    # command: >
+    #   /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
+
     command: >
+      sh -c "
+        until getent hosts $DB_HOST; do
+          echo '⏳ waiting DNS for postgres…';
+          sleep 2;
+        done;
       /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
+      "
+
     healthcheck:
       test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q housekeeping || exit 1"]
       start_period: 15s
