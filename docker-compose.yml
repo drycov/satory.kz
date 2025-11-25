@@ -9,7 +9,7 @@ x-netbox-base: &netbox-base
   networks:
     - satory_net
   depends_on:
-    pgnetbox:
+    postgres-netbox:
       condition: service_healthy
     redis:
       condition: service_healthy
