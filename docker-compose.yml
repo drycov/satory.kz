@@ -179,6 +179,12 @@ services:
       - back-tier
     volumes:
       - observium-mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u \"${MYSQL_USER}\" --password=\"${MYSQL_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
 
 
   # --------------------------------------------------------------------
@@ -210,7 +216,11 @@ volumes:
   netbox-reports-files:
   netbox-scripts-files:
   observium-mariadb-data:
-
+    driver: local
+    driver_opts:
+      type: none
+      device: /opt/satory.kz/data/observium-mariadb
+      o: bind
 # ======================================================================
 # NETWORKS
 # ======================================================================
