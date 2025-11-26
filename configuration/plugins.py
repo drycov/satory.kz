@@ -1,7 +1,6 @@
 PLUGINS = [
     "netbox_routing",
     "netbox_topology_views",
-    "netbox_ipcalculator",
     "netbox_interface_synchronization",
     "netbox_inventory",
     "netbox_oxidized_config_viewer",
@@ -35,12 +34,6 @@ PLUGINS_CONFIG = {
         "add_circuit_types": False,            # Не добавляем custom circuit types
         "cache_timeout": 60,                   # Кэш в секундах
     },
-
-    # ------------------------------------------------------------------
-    # NETBOX IP CALCULATOR
-    # Калькулятор префиксов. Не требует настроек.
-    # ------------------------------------------------------------------
-    "netbox_ipcalculator": {},
 
     # ------------------------------------------------------------------
     # NETBOX INTERFACE SYNCHRONIZATION
