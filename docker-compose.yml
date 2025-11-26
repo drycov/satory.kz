@@ -79,6 +79,7 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     env_file: env/postgres-netbox.env
+    container_name: netbox-postgres
     networks:
       - satory_net
     volumes:
