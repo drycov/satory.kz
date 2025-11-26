@@ -35,6 +35,13 @@ services:
     <<: *netbox-base
     ports:
       - "9000:8080"
+    depends_on:
+      postgres-netbox:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:8080/login/ > /dev/null || exit 1"]
       start_period: 90s
@@ -42,19 +49,22 @@ services:
       interval: 15s
       retries: 5
 
+
   # --------------------------------------------------------------------
   # NETBOX WORKER (RQ)
   # --------------------------------------------------------------------
   netbox-worker:
     <<: *netbox-base
+    depends_on:
+      postgres-netbox:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
     command: >
       /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
-    healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q rqworker || exit 1"]
-      start_period: 15s
-      interval: 10s
-      timeout: 3s
-      retries: 5
+
 
   # --------------------------------------------------------------------
   # NETBOX HOUSEKEEPING (periodic cleanup jobs)
@@ -62,15 +72,15 @@ services:
   netbox-housekeeping:
     <<: *netbox-base
     depends_on:
-      netbox:
+      postgres-netbox:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-cache:
         condition: service_healthy
     command: >
       /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py housekeeping
-    healthcheck:
-      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q housekeeping || exit 1"]
-      start_period: 15s
-      interval: 10s
-      retries: 5
+
 
   # --------------------------------------------------------------------
   # POSTGRESQL 17
