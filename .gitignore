@@ -1,0 +1,61 @@
+# Environment files
+# .env
+# .env.*
+
+# Python virtual environments
+venv/
+*/venv/
+
+# Docker
+*.pid
+*.log
+var/
+
+# NetBox media & compiled data
+media/
+static/
+netbox-media-files/
+netbox-reports-files/
+netbox-scripts-files/
+
+# Redis / Postgres data
+data/
+*redis*/
+*postgres*/
+
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / Editor junk
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+*.err
+*.out
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.old
+*.orig
+*.tmp
+
+# Composer / PHP vendor
+vendor/
+
+# Node artifacts
+
+node_modules/
+dist/
+openldap/
