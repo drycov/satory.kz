@@ -50,7 +50,6 @@ services:
       interval: 15s
       retries: 5
 
-
   # --------------------------------------------------------------------
   # NETBOX WORKER (RQ)
   # --------------------------------------------------------------------
@@ -235,7 +234,6 @@ services:
 # --------------------------------------------------------------------
 # PHPLDAPADMIN
 # --------------------------------------------------------------------
-
   phpldapadmin:
     image: osixia/phpldapadmin:latest
     container_name: phpldapadmin
@@ -250,6 +248,40 @@ services:
     depends_on:
       - openldap
 
+# --------------------------------------------------------------------
+# VAULT
+# --------------------------------------------------------------------
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_LOCAL_CONFIG: |
+        {
+          "backend": {
+            "file": {
+              "path": "/vault/file"
+            }
+          },
+          "listener": {
+            "tcp": {
+              "address": "0.0.0.0:8200",
+              "tls_disable": 1
+            }
+          },
+          "ui": true
+        }
+    ports:
+      - "8200:8200"
+    volumes:
+      - vault-data:/vault/file
+    networks:
+      - satory_net
+
+
+
 # ======================================================================
 # VOLUMES
 # ======================================================================
@@ -260,6 +292,8 @@ volumes:
   netbox-redis-cache-data:
   netbox-reports-files:
   netbox-scripts-files:
+  keycloak-postgres-data:
+  vault-data:
   observium-mariadb-data:
     driver: local
     driver_opts:
