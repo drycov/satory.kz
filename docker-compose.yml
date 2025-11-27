@@ -187,7 +187,6 @@ services:
       retries: 5
       start_period: 25s
 
-
   # --------------------------------------------------------------------
   # OBSERVIUM
   # --------------------------------------------------------------------
@@ -206,6 +205,50 @@ services:
     depends_on:
       observium-db:
         condition: service_healthy
+
+  # --------------------------------------------------------------------
+  # OPENLDAP AND PHPLDAPADMIN
+  # --------------------------------------------------------------------
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
+    restart: unless-stopped
+    environment:
+      LDAP_ORGANISATION: "Satory Networks"
+      LDAP_DOMAIN: "satory.kz"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_CONFIG_PASSWORD: "config"
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ./ldap/data:/var/lib/ldap
+      - ./ldap/config:/etc/ldap/slapd.d
+    networks:
+      - satory_net
+    healthcheck:
+      test: ["CMD", "ldapsearch", "-x", "-H", "ldap://localhost", "-b", "dc=satory,dc=kz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# --------------------------------------------------------------------
+# PHPLDAPADMIN
+# --------------------------------------------------------------------
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
+    restart: unless-stopped
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: "false"
+    ports:
+      - "8082:80"
+    networks:
+      - satory_net
+    depends_on:
+      - openldap
 
 # ======================================================================
 # VOLUMES
