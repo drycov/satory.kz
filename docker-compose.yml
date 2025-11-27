@@ -8,6 +8,7 @@ x-netbox-base: &netbox-base
   restart: unless-stopped
   networks:
     - satory_net
+    - back-tier
   depends_on:
     postgres-netbox:
       condition: service_healthy
@@ -34,7 +35,7 @@ services:
   netbox:
     <<: *netbox-base
     ports:
-      - "9000:8080"
+      - "8080:8080"
     depends_on:
       postgres-netbox:
         condition: service_healthy
@@ -100,7 +101,7 @@ services:
     env_file: env/postgres-netbox.env
     container_name: netbox-postgres
     networks:
-      - satory_net
+      - back-tier
     volumes:
       - netbox-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -120,7 +121,7 @@ services:
     command: >
       sh -c 'valkey-server --appendonly yes --requirepass "$$REDIS_PASSWORD"'
     networks:
-      - satory_net
+      - back-tier
     volumes:
       - netbox-redis-data:/data
     healthcheck:
@@ -139,7 +140,7 @@ services:
     command: >
       sh -c 'valkey-server --requirepass "$$REDIS_PASSWORD"'
     networks:
-      - satory_net
+      - back-tier
     volumes:
       - netbox-redis-cache-data:/data
     healthcheck:
