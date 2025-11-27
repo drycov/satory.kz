@@ -197,6 +197,7 @@ services:
     env_file: env/observium.env
     networks:
       - back-tier
+      - satory_net
     ports:
       - "8081:80"
     volumes:
