@@ -209,7 +209,7 @@ services:
   # OPENLDAP AND PHPLDAPADMIN
   # --------------------------------------------------------------------
   openldap:
-    image: osixia/openldap:1.5.0
+    image: osixia/openldap:latest
     container_name: openldap
     restart: unless-stopped
     environment:
