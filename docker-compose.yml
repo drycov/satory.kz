@@ -242,7 +242,7 @@ services:
       PHPLDAPADMIN_LDAP_HOSTS: openldap
       PHPLDAPADMIN_HTTPS: "false"
     ports:
-      - "8082:80"
+      - "8082:8080"
     networks:
       - satory_net
     depends_on:
