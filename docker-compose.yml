@@ -268,9 +268,16 @@ services:
     restart: unless-stopped
     environment:
       LDAP_HOST: openldap
+      LDAP_BASE_DN: dc=satory,dc=kz
+      LDAP_LOGIN_ATTR: uid
+      LDAP_LOGIN_OBJECTCLASS: posixAccount,inetOrgPerson
+      LDAP_USERNAME: cn=admin,dc=satory,dc=kz
+      LDAP_PASSWORD: admin
+      LDAP_ALLOW_GUEST: "false"
       PHPLDAPADMIN_HTTPS: "false"
       APP_DEBUG: "true"
       APP_TIMEZONE: "Asia/Almaty"
+
     ports:
       - "8082:8080"
     networks:
