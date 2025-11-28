@@ -1,0 +1,13 @@
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: to attrs=userPassword,shadowLastChange,shadowMin,shadowMax,shadowWarning,shadowExpire
+  by dn.exact="cn=admin,dc=satory,dc=kz" write
+  by dn.exact="uid=svc-freeradius,ou=ServiceAccounts,ou=System,dc=satory,dc=kz" read
+  by self write
+  by anonymous auth
+  by * none
+olcAccess: to dn.subtree="dc=satory,dc=kz"
+  by dn.exact="cn=admin,dc=satory,dc=kz" manage
+  by users read
+  by anonymous none

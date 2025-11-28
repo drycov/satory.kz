@@ -1,0 +1,36 @@
+dn: cn=radius-vpn,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: groupOfNames
+cn: radius-vpn
+
+dn: cn=radius-wifi,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: groupOfNames
+cn: radius-wifi
+
+dn: cn=radius-blocked,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: groupOfNames
+cn: radius-blocked
+
+dn: uid=vpn-user1,ou=RadiusUsers,ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: vpn-user1
+cn: VPN User One
+sn: User
+mail: vpn-user1@satory.kz
+userPassword: vpnpass1
+
+dn: uid=wifi-user1,ou=RadiusUsers,ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: wifi-user1
+cn: WiFi User One
+sn: User
+mail: wifi-user1@satory.kz
+userPassword: wifipass1

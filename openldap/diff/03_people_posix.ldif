@@ -1,0 +1,43 @@
+dn: uid=dr.rykov,ou=People,dc=satory,dc=kz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: dr.rykov
+cn: Denis Rykov
+sn: Rykov
+mail: dr.rykov@satory.kz
+uidNumber: 11000
+gidNumber: 10000
+homeDirectory: /home/dr.rykov
+loginShell: /bin/bash
+gecos: Denis Rykov
+shadowMin: 0
+shadowMax: 365
+shadowWarning: 14
+shadowExpire: -1
+userPassword: dr.rykov
+
+dn: uid=engineer1,ou=People,dc=satory,dc=kz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: engineer1
+cn: Engineer One
+sn: One
+mail: engineer1@satory.kz
+uidNumber: 11001
+gidNumber: 10000
+homeDirectory: /home/engineer1
+loginShell: /bin/bash
+gecos: Engineer One
+shadowMin: 0
+shadowMax: 365
+shadowWarning: 14
+shadowExpire: -1
+userPassword: engineer1

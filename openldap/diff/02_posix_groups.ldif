@@ -1,0 +1,55 @@
+dn: cn=noc,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: noc
+gidNumber: 10000
+description: Core NOC engineering group with elevated access
+
+dn: cn=admins,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: admins
+gidNumber: 10001
+description: System administrators with privileged access
+
+dn: cn=netbox,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: netbox
+gidNumber: 10010
+description: NetBox-related POSIX group
+
+dn: cn=zabbix,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: zabbix
+gidNumber: 10020
+description: Zabbix service POSIX group
+
+dn: cn=observium,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: observium
+gidNumber: 10030
+description: Observium monitoring POSIX group
+
+dn: cn=phpipam,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: phpipam
+gidNumber: 10040
+description: phpIPAM POSIX group
+
+dn: cn=radius,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: radius
+gidNumber: 10050
+description: RADIUS access and accounting group
+
+dn: cn=devops,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: posixGroup
+cn: devops
+gidNumber: 10060
+description: DevOps service and CI/CD group

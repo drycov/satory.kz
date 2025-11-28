@@ -1,0 +1,80 @@
+# =====================================================================
+#  SECTION 1 — Create OU for Password Policies
+# =====================================================================
+
+dn: ou=Policies,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Policies
+description: Password and security policies for Satory corporate LDAP
+
+
+# =====================================================================
+#  SECTION 2 — Balanced Password Policy (IT-friendly)
+# =====================================================================
+
+dn: cn=DefaultPolicy,ou=Policies,dc=satory,dc=kz
+objectClass: top
+objectClass: device
+objectClass: pwdPolicy
+cn: DefaultPolicy
+pwdAttribute: userPassword
+
+# ---- Password Length ----
+pwdMinLength: 10
+
+# ---- Complexity: at least letter + digit ----
+pwdCheckQuality: 1
+
+# ---- Validity: 60 days ----
+pwdMaxAge: 5184000
+
+# ---- Warning before expiration: 3 days ----
+pwdExpireWarning: 259200
+
+# ---- Password History: last 5 passwords ----
+pwdInHistory: 5
+
+# ---- Allow login for old password until grace logins end ----
+pwdGraceAuthNLimit: 3
+
+# ---- Failure lockout: after 15 attempts ----
+pwdLockout: TRUE
+pwdLockoutDuration: 300
+
+# max 15 failed authentication attempts
+pwdMaxFailure: 15
+
+# Failures reset after 20 minutes (1200 seconds)
+pwdFailureCountInterval: 1200
+
+pwdAllowUserChange: TRUE
+pwdSafeModify: TRUE
+description: Balanced Satory Password Policy: min length 10, complexity letter+digit, 60 days validity, 3 days warning, 5 passwords history, lockout 15 fails
+
+
+# =====================================================================
+#  SECTION 3 — Apply policy to the entire directory tree
+# =====================================================================
+
+dn: dc=satory,dc=kz
+changetype: modify
+add: pwdPolicySubentry
+pwdPolicySubentry: cn=DefaultPolicy,ou=Policies,dc=satory,dc=kz
+
+
+# =====================================================================
+#  SECTION 4 — Enable ppolicy overlay in slapd (osixia-compatible)
+# =====================================================================
+
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: ppolicy.so
+
+dn: olcOverlay=ppolicy,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcPPolicyConfig
+olcOverlay: ppolicy
+olcPPolicyDefault: cn=DefaultPolicy,ou=Policies,dc=satory,dc=kz
+olcPPolicyHashCleartext: TRUE

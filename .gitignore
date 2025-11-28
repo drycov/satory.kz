@@ -58,4 +58,6 @@ vendor/
 
 node_modules/
 dist/
-openldap/
+openldap/data/
+openldap/config/
+openldap/certs/

@@ -1,0 +1,85 @@
+dn: dc=satory,dc=kz
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+dc: satory
+o: Satory Networks
+description: Corporate root domain of Satory Networks LDAP directory
+
+dn: ou=People,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+description: Human POSIX accounts, employees, engineers, administrators
+
+dn: ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: System
+description: System-level accounts, Radius users, device objects
+
+dn: ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Groups
+description: POSIX groups, RBAC groups, service groups, Radius groups
+
+dn: ou=Infrastructure,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Infrastructure
+description: Infrastructure objects, network, DHCP, management policies
+
+dn: ou=ServiceAccounts,ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: ServiceAccounts
+description: Service POSIX accounts for applications and automation
+
+dn: ou=RadiusUsers,ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: RadiusUsers
+description: RADIUS user accounts for WiFi, VPN, 802.1X authentication
+
+dn: ou=Devices,ou=System,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Devices
+description: Device objects such as switches, routers, access points, servers
+
+dn: ou=Roles,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Roles
+description: RBAC role groups for services such as NetBox, Zabbix, Observium
+
+dn: ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: RadiusGroups
+description: RADIUS policy groups such as VPN, WiFi, blocked users
+
+dn: ou=DeviceGroups,ou=Groups,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: DeviceGroups
+description: Device groups for inventory and policy assignment
+
+dn: ou=Dhcp,ou=Infrastructure,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Dhcp
+description: DHCP-related LDAP objects and configuration stubs
+
+dn: ou=Network,ou=Infrastructure,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Network
+description: Network addressing schemas, VLAN definitions, IP plans
+
+dn: ou=Management,ou=Infrastructure,dc=satory,dc=kz
+objectClass: top
+objectClass: organizationalUnit
+ou: Management
+description: Security policies, password rules, SSH key storage, ACL templates
