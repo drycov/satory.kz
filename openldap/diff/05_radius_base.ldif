@@ -2,16 +2,19 @@ dn: cn=radius-vpn,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
 objectClass: top
 objectClass: groupOfNames
 cn: radius-vpn
+member: uid=vpn-user1,ou=RadiusUsers,ou=System,dc=satory,dc=kz
 
 dn: cn=radius-wifi,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
 objectClass: top
 objectClass: groupOfNames
 cn: radius-wifi
+member: uid=wifi-user1,ou=RadiusUsers,ou=System,dc=satory,dc=kz
 
 dn: cn=radius-blocked,ou=RadiusGroups,ou=Groups,dc=satory,dc=kz
 objectClass: top
 objectClass: groupOfNames
 cn: radius-blocked
+member: cn=dummy,dc=satory,dc=kz
 
 dn: uid=vpn-user1,ou=RadiusUsers,ou=System,dc=satory,dc=kz
 objectClass: top
